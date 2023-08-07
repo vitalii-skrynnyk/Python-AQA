@@ -85,6 +85,7 @@ class TestLoginAndCreatingCar:
             By.XPATH, "//button[text()='Add car']"
         )
         add_car_button.click()
+        time.sleep(1)
 
         brand_field = self.driver.find_element(By.XPATH, "//select[@name='carBrandId']")
         model_field = self.driver.find_element(By.XPATH, "//select[@name='carModelId']")
@@ -94,7 +95,7 @@ class TestLoginAndCreatingCar:
         )
 
         Select(brand_field).select_by_visible_text(self.car_brand)
-        time.sleep(0.2)
+        time.sleep(0.3)
         Select(model_field).select_by_visible_text(self.car_model)
         mileage_field.send_keys(self.mileage)
         add_car_submit_button_.click()
