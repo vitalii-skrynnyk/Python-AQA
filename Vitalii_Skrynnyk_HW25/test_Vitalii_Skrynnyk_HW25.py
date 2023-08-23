@@ -1,8 +1,6 @@
 from allure_commons.types import AttachmentType
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
 import requests
-import json
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from custom_web_driver import Driver
@@ -10,7 +8,10 @@ from login_page import LoginPage
 from navigation_bar_base_page import NavigationBar
 from add_car_page import AddCarPage
 import allure
-import allure_commons
+from user_credentials import USER_NAME_MAIN_USER, USER_LAST_NAME_MAIN_USER, \
+    USER_EMAIL_MAIN_USER, USER_PASSWORD_MAIN_USER, CAR_BRAND_1_MAIN_USER, CAR_MODEL_1_MAIN_USER, CAR_MILEAGE_1_MAIN_USER
+from login_facade import LogInFacade
+from add_car_facade import AddCarFacade
 
 
 class UserLoginModel:
@@ -37,24 +38,25 @@ class TestLoginAndCreatingCar:
         """
         self.driver = Driver().driver
         self.driver.get("https://guest:welcome2qauto@qauto2.forstudy.space/")
+        self.login_facade = LogInFacade()
         self.navigation_bar_base_page = NavigationBar()
         self.login_page = LoginPage()
         self.add_car_page = AddCarPage()
-
-        with open("test_data.json") as config:
-            lines = json.loads(config.read())
+        self.add_car_facade = AddCarFacade()
 
         self.session = requests.session()
-        self.user_mail = lines["test_user_1_email"]
-        self.user_password = lines["test_user_1_password"]
+        self.user_name = USER_NAME_MAIN_USER
+        self.user_last_name = USER_LAST_NAME_MAIN_USER
+        self.user_mail = USER_EMAIL_MAIN_USER
+        self.user_password = USER_PASSWORD_MAIN_USER
         self.base_url = "https://qauto2.forstudy.space/api"
-        self.car_brand = lines["test_user_1_car_brand"]
-        self.car_model = lines["test_user_1_car_model"]
-        self.mileage = lines["test_user_1_car_mileage"]
+        self.car_brand = CAR_BRAND_1_MAIN_USER
+        self.car_model = CAR_MODEL_1_MAIN_USER
+        self.mileage = CAR_MILEAGE_1_MAIN_USER
 
         success_registration_test_data = {
-            "name": "John",
-            "lastName": "Dou",
+            "name": self.user_name,
+            "lastName": self.user_last_name,
             "email": self.user_mail,
             "password": self.user_password,
             "repeatPassword": self.user_password,
@@ -64,20 +66,13 @@ class TestLoginAndCreatingCar:
         )
 
     @allure.feature("LogIn UI")
-    @allure.step("LogIN UI full cycle ")
     @allure.link("https://www.google.com", name="UI LogIN")
     def test_login_success_ui(self):
         """
         The method verifies successful user login via UI.
         :return: None
         """
-
-        self.navigation_bar_base_page.sign_in_button().click()
-
-        self.login_page.email_field().send_keys(self.user_mail)
-        self.login_page.password_field().send_keys(self.user_password)
-
-        self.login_page.log_in_button().click()
+        self.login_facade.login_full_cycle()
 
         allure.attach(self.driver.get_screenshot_as_png(), name="LogInSuccess", attachment_type=AttachmentType.PNG)
 
@@ -86,25 +81,13 @@ class TestLoginAndCreatingCar:
         ).is_displayed()
 
     @allure.feature("Adding car UI")
-    @allure.step("Adding car UI full cycle")
     @allure.link("https://www.google.com", name="Adding a car UI")
     def test_add_car_ui(self):
         """
         The method verifies successful adding car via UI.
         :return: None
         """
-        add_car_button = self.driver.find_element(
-            By.XPATH, "//button[text()='Add car']"
-        )
-        add_car_button.click()
-
-        # select brand = Porsche; model = Cayenne
-        Select(self.add_car_page.brand_field()).select_by_visible_text(self.car_brand)
-        Select(self.add_car_page.model_field()).select_by_visible_text(self.car_model)
-
-        self.add_car_page.mileage_field().send_keys(self.mileage)
-
-        self.add_car_page.add_car_submit_button().click()
+        self.add_car_facade.add_car_full_cycle()
 
         WebDriverWait(driver=self.driver, timeout=1).until(
             expected_conditions.visibility_of_element_located(
@@ -117,7 +100,6 @@ class TestLoginAndCreatingCar:
         assert f"{self.car_brand} {self.car_model}" in self.driver.page_source
 
     @allure.feature("Get Car info API")
-    @allure.step("GET user's car info API")
     @allure.link("https://www.google.com", name="GET /cars")
     def test_check_car_api(self):
         """
